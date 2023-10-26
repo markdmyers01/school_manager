@@ -66,8 +66,9 @@ def search_school_id(sch_id: str, request: SchoolBase):
             updated_result = select(School).where(School.school_id == sch_id)
 
             for r in session.scalars(updated_result):
-                result.append(r)
+                result.append(r.__dict__)
 
-        return {'updated_values': result.__dict__}
+        return {'updated_values': result}
     except SQLAlchemyError as err:
+        session.rollback()
         print(f'Error working with db. Error: {err}', file=sys.stderr)
