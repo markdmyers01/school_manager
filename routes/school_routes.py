@@ -3,7 +3,7 @@ from fastapi import APIRouter
 from db.db_connect import engine
 from models.course_models import School
 from schemas.schools_schema import SchoolBase
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from fastapi.encoders import jsonable_encoder
@@ -44,10 +44,30 @@ def search_school_name(name: str):
     return {'schools': jsonable_encoder(school_list)}
 
 
-@router.put('/{id}/update')
-def search_school_id(id: str, request: SchoolBase):
-    pass
+@router.post('/{sch_id}/update')
+def search_school_id(sch_id: str, request: SchoolBase):
+    result = []
+    try:
+        with Session(engine) as session:
+            session.begin()
+            stmt = (
+                update(School)
+                .where(School.school_id == sch_id)
+                .values(
+                    city=request.city,
+                    state=request.state,
+                    country=request.country
+                )
+            )
+            session.execute(stmt)
+            session.commit()
 
-# @router.post('/{id}/update')
-# def update_user(id: int, request: SchoolBase, db: Session = Depends(get_db), current_user: UserBase = Depends(get_current_user)):
-#     return db_user.update_user(db, id, request)
+            # Confirm record was updated
+            updated_result = select(School).where(School.school_id == sch_id)
+
+            for r in session.scalars(updated_result):
+                result.append(r)
+
+        return {'updated_values': result.__dict__}
+    except SQLAlchemyError as err:
+        print(f'Error working with db. Error: {err}', file=sys.stderr)
