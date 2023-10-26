@@ -54,6 +54,7 @@ def search_school_id(sch_id: str, request: SchoolBase):
                 update(School)
                 .where(School.school_id == sch_id)
                 .values(
+                    fullname=request.fullname,
                     city=request.city,
                     state=request.state,
                     country=request.country
